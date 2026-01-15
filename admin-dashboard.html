@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="assets/ossip-bg.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS untuk debugging */
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 9999;
+        }
+        .error-box {
+            background: #ff4444;
+            color: white;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+        }
+
+                /* Footer */
+        .admin-footer {
+            padding-top: 25px;
+            border-top: 1px solid #eaeaea;
+            text-align: center;
+            color: #546e7a;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body class="admin-dashboard-page">
+    <!-- Debug Info -->
+    <div class="debug-info" id="debugInfo">
+        Status: Memuat...
+    </div>
+
+    <!-- Session Check - SEDERHANA -->
+    <script>
+        console.log('=== SESSION CHECK START ===');
+        
+        const isLoggedIn = sessionStorage.getItem('adminLoggedIn');
+        const adminUsername = sessionStorage.getItem('adminUsername');
+        
+        console.log('isLoggedIn:', isLoggedIn);
+        console.log('adminUsername:', adminUsername);
+        
+        if (!isLoggedIn || !adminUsername) {
+            console.log('NOT LOGGED IN - REDIRECTING');
+            alert('⚠️ Anda harus login sebagai admin terlebih dahulu!');
+            window.location.href = 'admin-login.html';
+        } else {
+            console.log('LOGGED IN - CONTINUING');
+            document.getElementById('debugInfo').textContent = 'Status: Login OK';
+            
+            // Set admin info
+            document.addEventListener('DOMContentLoaded', function() {
+                const adminName = sessionStorage.getItem('adminName') || 'Admin';
+                const adminRole = sessionStorage.getItem('adminRole') || 'Administrator';
+                
+                if (document.getElementById('adminName')) {
+                    document.getElementById('adminName').textContent = adminName;
+                    document.getElementById('adminRole').textContent = adminRole;
+                    document.getElementById('adminUsername').textContent = '@' + adminUsername;
+                }
+            });
+        }
+        
+        console.log('=== SESSION CHECK END ===');
+
+        // ===== DATABASE SYNC FUNCTIONS =====
+function setupDatabaseSync() {
+    console.log('🔧 Setting up database sync...');
+    
+    // Listen for events from voters page
+    window.addEventListener('databaseUpdated', async (event) => {
+        console.log('📡 Database update event received:', event.detail);
+        
+        const { type, data } = event.detail;
+        
+        if (type === 'VOTER_UPDATED' || 
+            type === 'VOTE_CHANGED' ||
+            type === 'VOTER_ADDED' ||
+            type === 'VOTER_DELETED' ||
+            type === 'VOTE_RESET') {
+            
+            console.log(`🔄 Refreshing dashboard due to: ${type}`);
+            
+            // Show notification
+            showUpdateNotification(type);
+            
+            // Refresh dashboard
+            await refreshDashboardWithAnimation();
+        }
+    });
+    
+    // Listen for localStorage changes
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'lastDatabaseUpdate') {
+            try {
+                const updateData = JSON.parse(event.newValue);
+                console.log('📡 Storage update:', updateData.type);
+                
+                // Trigger refresh untuk semua update terkait voter
+                if (updateData.type && updateData.type.includes('VOTER') || 
+                    updateData.type && updateData.type.includes('VOTE')) {
+                    refreshDashboardWithAnimation();
+                }
+            } catch (e) {
+                console.log('Error parsing storage update:', e);
+            }
+        }
+    });
+    
+    // Setup BroadcastChannel
+    if (typeof BroadcastChannel !== 'undefined') {
+        if (!window.dbSyncChannel) {
+            window.dbSyncChannel = new BroadcastChannel('ossip-database-sync');
+        }
+        
+        window.dbSyncChannel.onmessage = (event) => {
+            if (event.data.action === 'DATABASE_UPDATE') {
+                const { type } = event.data.payload;
+                
+                if (type.includes('VOTER') || type.includes('VOTE')) {
+                    console.log('📡 BroadcastChannel update:', type);
+                    refreshDashboardWithAnimation();
+                }
+            }
+        };
+    }
+    
+    // Auto-refresh setiap 10 detik
+    setInterval(async () => {
+        try {
+            await refreshDashboard();
+        } catch (error) {
+            console.log('Auto-refresh error:', error);
+        }
+    }, 10000);
+}
+
+// Fungsi untuk refresh dengan animasi
+async function refreshDashboardWithAnimation() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.classList.add('refreshing');
+    }
+    
+    await refreshDashboard();
+    
+    if (refreshBtn) {
+        setTimeout(() => {
+            refreshBtn.classList.remove('refreshing');
+        }, 1000);
+    }
+}
+
+// Fungsi untuk show update notification
+function showUpdateNotification() {
+    // Cek jika notification sudah ada
+    if (document.getElementById('updateNotification')) {
+        return;
+    }
+    
+    const notification = document.createElement('div');
+    notification.id = 'updateNotification';
+    notification.innerHTML = `
+        <i class="fas fa-sync-alt fa-spin"></i>
+        <span>Data diperbarui, memuat ulang...</span>
+    `;
+    notification.style.cssText = `
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    // Add styles for animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove setelah 3 detik
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 3000);
+}
+
+// ===== MODIFIKASI RENDER DASHBOARD =====
+function renderDashboard(stats) {
+    console.log('Rendering dashboard with updated stats:', stats);
+    
+    const content = `
+        <div class="dashboard-header">
+            <h2><i class="fas fa-tachometer-alt"></i> Dashboard Pemilihan - Real-time</h2>
+            <div class="header-actions">
+                <button onclick="refreshDashboardWithAnimation()" class="btn-refresh" id="refreshBtn">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+                <span class="last-update">Terakhir: ${new Date().toLocaleTimeString()}</span>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #3949ab, #5c6bc0);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Pemilih</h3>
+                    <p class="stat-number">${stats.totalVoters || 0}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #4CAF50, #2E7D32);">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Sudah Memilih</h3>
+                    <p class="stat-number">${stats.votedVoters || 0}</p>
+                    <p class="stat-percentage">${stats.votePercentage || 0}%</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #FF9800, #F57C00);">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Belum Memilih</h3>
+                    <p class="stat-number">${stats.notVotedVoters || 0}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Kandidat</h3>
+                    <p class="stat-number">${stats.totalCandidates || 0}</p>
+                </div>
+            </div>
+        </div>
+        
+ <div class="candidates-section">
+    <h2><i class="fas fa-trophy"></i> Hasil Real-time</h2>
+    <div class="candidates-grid">
+        ${(stats.candidates || []).map(candidate => `
+            <div class="candidate-result">
+                <div class="candidate-number">${candidate.number || '?'}</div>
+                <div class="candidate-info">
+                    <h4>${candidate.chairman_name || candidate.name || 'Kandidat'}</h4>
+                    <p class="candidate-votes">
+                        <i class="fas fa-vote-yea"></i> ${candidate.votes || 0} suara (${candidate.percentage || 0}%)
+                    </p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${candidate.percentage || 0}%"></div>
+                    </div>
+                </div>
+            </div>
+        `).join('')}
+    </div>
+</div>
+        
+        <div class="quick-actions">
+            <h2><i class="fas fa-bolt"></i> Aksi Cepat</h2>
+            <div class="actions-grid">
+                <button class="action-btn" onclick="if(confirm('Reset semua voting?')) resetVoting()">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset Voting</span>
+                </button>
+                <button class="action-btn" onclick="exportData()">
+                    <i class="fas fa-file-export"></i>
+                    <span>Ekspor Data</span>
+                </button>
+                <button class="action-btn" onclick="viewLogs()">
+                    <i class="fas fa-history"></i>
+                    <span>Log Aktivitas</span>
+                </button>
+                <button class="action-btn" onclick="refreshDashboardWithAnimation()">
+                    <i class="fas fa-sync"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="sync-status">
+            <p><i class="fas fa-wifi"></i> Status sinkronisasi: <span class="sync-active">Aktif</span></p>
+            <p class="last-sync">Update terakhir: ${stats.lastUpdate || new Date().toLocaleString()}</p>
+        </div>
+    `;
+    
+    document.getElementById('dashboardContent').innerHTML = content;
+    
+    // Tambahkan CSS untuk sync status
+    const syncStyle = document.createElement('style');
+    syncStyle.textContent = `
+        .sync-status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        .sync-status .sync-active {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .sync-status .last-sync {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #888;
+        }
+        .btn-refresh {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        .btn-refresh:hover {
+            background: #1976D2;
+        }
+        .btn-refresh.refreshing {
+            background: #FF9800;
+        }
+        .btn-refresh.refreshing i {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(syncStyle);
+}
+
+// ===== MODIFIKASI INITIALIZATION =====
+// Di bagian akhir script, setelah semua fungsi didefinisikan
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded');
+    document.getElementById('debugInfo').textContent = 'Status: DOM Ready';
+    
+    // Set admin info
+    const adminName = sessionStorage.getItem('adminName') || 'Admin';
+    const adminRole = sessionStorage.getItem('adminRole') || 'Administrator';
+    const adminUsername = sessionStorage.getItem('adminUsername') || 'admin';
+    
+    document.getElementById('adminName').textContent = adminName;
+    document.getElementById('adminRole').textContent = adminRole;
+    document.getElementById('adminUsername').textContent = '@' + adminUsername;
+    
+    // Start loading dashboard
+    setTimeout(async () => {
+        console.log('Starting dashboard load...');
+        await loadDashboardContent();
+        
+        // Setup database sync setelah dashboard loaded
+        setupDatabaseSync();
+    }, 500);
+});
+
+    </script>
+    
+    <div class="admin-dashboard-container">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-profile">
+                <div class="profile-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h3 id="adminName">Memuat...</h3>
+                <p class="admin-role" id="adminRole">Memuat...</p>
+                <p class="admin-username" id="adminUsername">@memuat</p>
+            </div>
+            
+            <nav class="admin-menu">
+                <ul>
+                    <li class="active">
+                        <a href="#">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="admin-voters.html">
+                            <i class="fas fa-users"></i>
+                            <span>Data Santri</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="admin-statistics.html">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Statistik</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="admin-logs.html">
+                            <i class="fas fa-history"></i>
+                            <span>Log Aktivitas</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="admin-settings.html">
+                            <i class="fas fa-cog"></i>
+                            <span>Pengaturan</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="logout-section">
+                <button class="btn-logout" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+                <p class="login-time" id="loginTime">Login: -</p>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="admin-main-content">
+            <!-- Header -->
+            <div class="admin-header">
+                <div class="header-left">
+                    <h1>Admin Dashboard</h1>
+                    <p>Panel Kontrol Sistem Pemilihan OSSIP 2026-2027</p>
+                </div>
+                <div class="header-right">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-count">0</span>
+                    </div>
+                    <div class="system-status">
+                        <i class="fas fa-circle system-online"></i>
+                        <span>Sistem Online</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="dashboard-content" id="dashboardContent">
+                <div class="loading-spinner" id="loadingSpinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Memuat dashboard...</p>
+                    <button class="btn-retry" onclick="retryLoad()" style="margin-top: 20px;">
+                        <i class="fas fa-redo"></i> Coba Lagi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Logout Modal -->
+    <div class="modal-overlay" id="logoutModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-sign-out-alt"></i> Konfirmasi Logout</h2>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin logout?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="document.getElementById('logoutModal').style.display='none'">Batal</button>
+                <button class="btn-confirm" onclick="doLogout()">Ya, Logout</button>
+            </div>
+        </div>
+    </div>
+
+            <div class="admin-footer">
+                <p>&copy; 2024 Organisasi Siswa Santri (OSSIP). Hak Cipta Dilindungi.</p>
+                <p><i class="fas fa-mosque"></i> Pondok Pesantren Tahfidz Insan Pratama2</p>
+            </div>
+
+    <!-- Main Script -->
+    <script>
+// =========== PERBAIKAN PADA BAGIAN ATAS FILE ===========
+console.log('=== MAIN SCRIPT START ===');
+
+// Update debug info
+document.getElementById('debugInfo').textContent = 'Status: Inisialisasi...';
+
+// Variabel untuk mengecek ketersediaan database
+let dbInitialized = false;
+let dbCheckAttempts = 0;
+const MAX_DB_CHECKS = 30; // Meningkatkan batas pengecekan
+const DB_CHECK_INTERVAL = 500; // Interval 500ms
+
+// Basic functions
+function retryLoad() {
+    console.log('Retrying load...');
+    initializeDatabase().then(() => loadDashboardContent());
+}
+
+function doLogout() {
+    sessionStorage.clear();
+    window.location.href = 'admin-login.html';
+}
+
+// FUNGSI BARU: Inisialisasi Database
+async function initializeDatabase() {
+    return new Promise((resolve, reject) => {
+        console.log('Initializing database...');
+        
+        // Jika window.db sudah ada dan berfungsi
+        if (window.db && typeof window.db.getElectionStats === 'function') {
+            console.log('Database already initialized');
+            dbInitialized = true;
+            resolve(true);
+            return;
+        }
+        
+        // Fungsi untuk memeriksa database
+        function checkDatabase() {
+            dbCheckAttempts++;
+            console.log(`Checking database (attempt ${dbCheckAttempts}/${MAX_DB_CHECKS})...`);
+            
+            if (window.db && typeof window.db.getElectionStats === 'function') {
+                console.log('✓ Database available!');
+                dbInitialized = true;
+                resolve(true);
+                return;
+            }
+            
+            if (dbCheckAttempts >= MAX_DB_CHECKS) {
+                console.error('✗ Database not available after maximum attempts');
+                reject(new Error('Database tidak dapat diinisialisasi'));
+                return;
+            }
+            
+            // Coba lagi
+            setTimeout(checkDatabase, DB_CHECK_INTERVAL);
+        }
+        
+        // Mulai pengecekan
+        checkDatabase();
+    });
+}
+
+// FUNGSI BARU: Fallback jika database tidak tersedia
+function initializeFallbackDatabase() {
+    console.warn('Using fallback database');
+    
+    // Buat objek database fallback sederhana
+    window.db = {
+        getElectionStats: async function() {
+            return {
+                totalVoters: 1500,
+                votesCast: 980,
+                votePercentage: 65.3,
+                candidateStats: [
+                    { id: 1, name: 'Kandidat A', votes: 450, percentage: 45.9 },
+                    { id: 2, name: 'Kandidat B', votes: 380, percentage: 38.8 },
+                    { id: 3, name: 'Kandidat C', votes: 150, percentage: 15.3 }
+                ],
+                lastUpdate: new Date().toLocaleString()
+            };
+        }
+    };
+    
+    dbInitialized = true;
+    return window.db;
+}
+
+// FUNGSI BARU: Coba muat database dari script eksternal
+async function loadDatabaseScript() {
+    return new Promise((resolve, reject) => {
+        // Cek apakah script database sudah dimuat
+        if (document.querySelector('script[src*="database"]')) {
+            console.log('Database script already loaded');
+            resolve(true);
+            return;
+        }
+        
+        // Coba muat script database (sesuaikan path dengan struktur Anda)
+        const scriptPaths = [
+            'js/database.js',
+            'database.js',
+            '../database.js',
+            'scripts/database.js',
+            './database.js'
+        ];
+        
+        let loaded = false;
+        
+        scriptPaths.forEach(path => {
+            if (loaded) return;
+            
+            const script = document.createElement('script');
+            script.src = path;
+            script.onload = () => {
+                console.log(`✓ Database script loaded from: ${path}`);
+                loaded = true;
+                resolve(true);
+            };
+            script.onerror = () => {
+                console.log(`✗ Failed to load from: ${path}`);
+            };
+            
+            document.head.appendChild(script);
+        });
+        
+        // Timeout jika semua gagal
+        setTimeout(() => {
+            if (!loaded) {
+                console.warn('Could not load database script, using fallback');
+                initializeFallbackDatabase();
+                resolve(false);
+            }
+        }, 3000);
+    });
+}
+
+// Test database connection
+function testDatabase() {
+    console.log('Testing database connection...');
+    
+    if (!window.db) {
+        console.error('window.db is undefined');
+        return false;
+    }
+    
+    if (!window.db.getElectionStats) {
+        console.error('window.db.getElectionStats is undefined');
+        return false;
+    }
+    
+    console.log('Database functions available:', Object.keys(window.db).filter(k => typeof window.db[k] === 'function'));
+    return true;
+}
+
+// MODIFIKASI: Load dashboard content
+async function loadDashboardContent() {
+    console.log('Loading dashboard content...');
+    document.getElementById('debugInfo').textContent = 'Status: Memuat data...';
+    
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    if (loadingSpinner) {
+        loadingSpinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i><p>Memuat data...</p>';
+    }
+    
+    try {
+        // Test database first
+        if (!testDatabase()) {
+            console.log('Database not ready, attempting initialization...');
+            await initializeDatabase();
+        }
+        
+        // Try to get stats
+        console.log('Calling getElectionStats...');
+        const stats = await window.db.getElectionStats();
+        console.log('Stats received:', stats);
+        
+        // Render dashboard
+        renderDashboard(stats);
+        document.getElementById('debugInfo').textContent = 'Status: Selesai';
+        
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
+        document.getElementById('debugInfo').textContent = 'Status: Error';
+        
+        // Show error message dengan lebih banyak opsi
+        document.getElementById('dashboardContent').innerHTML = `
+            <div class="error-box">
+                <h3><i class="fas fa-exclamation-triangle"></i> Gagal Memuat Dashboard</h3>
+                <p>Error: ${error.message}</p>
+                <p>Menggunakan data fallback...</p>
+                <button onclick="retryLoad()" class="btn-retry">
+                    <i class="fas fa-redo"></i> Coba Lagi
+                </button>
+                <button onclick="showFallbackData()" class="btn-retry" style="background: #666; margin-left: 10px;">
+                    <i class="fas fa-eye"></i> Tampilkan Data Demo
+                </button>
+                <button onclick="forceFallbackDatabase()" class="btn-retry" style="background: #8B4513; margin-left: 10px;">
+                    <i class="fas fa-database"></i> Gunakan Database Fallback
+                </button>
+            </div>
+        `;
+        
+        // Otomatis coba fallback
+        try {
+            showFallbackData();
+        } catch (e) {
+            console.error('Fallback also failed:', e);
+        }
+    }
+}
+
+// FUNGSI BARU: Tampilkan data fallback
+function showFallbackData() {
+    console.log('Showing fallback data...');
+    const fallbackStats = {
+        totalVoters: 1500,
+        votesCast: 980,
+        votePercentage: 65.3,
+        candidateStats: [
+            { id: 1, name: 'Kandidat A', votes: 450, percentage: 45.9 },
+            { id: 2, name: 'Kandidat B', votes: 380, percentage: 38.8 },
+            { id: 3, name: 'Kandidat C', votes: 150, percentage: 15.3 }
+        ],
+        lastUpdate: new Date().toLocaleString(),
+        isFallback: true
+    };
+    
+    renderDashboard(fallbackStats);
+    document.getElementById('debugInfo').textContent = 'Status: Data Demo';
+    
+    // Tambahkan notifikasi
+    const notification = document.createElement('div');
+    notification.className = 'fallback-notification';
+    notification.innerHTML = '<i class="fas fa-info-circle"></i> Menampilkan data demo. Database asli tidak tersedia.';
+    notification.style.cssText = 'background: #FFA500; color: #000; padding: 10px; margin: 10px 0; border-radius: 5px;';
+    document.getElementById('dashboardContent').prepend(notification);
+}
+
+// FUNGSI BARU: Paksa penggunaan fallback database
+function forceFallbackDatabase() {
+    console.log('Forcing fallback database...');
+    initializeFallbackDatabase();
+    loadDashboardContent();
+}
+
+// MODIFIKASI: Inisialisasi saat halaman dimuat
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('DOM Content Loaded');
+    
+    // Set login time
+    const loginTime = sessionStorage.getItem('adminLoginTime');
+    if (loginTime) {
+        const time = new Date(loginTime).toLocaleTimeString();
+        document.getElementById('loginTime').textContent = `Login: ${time}`;
+    } else {
+        const now = new Date().toLocaleTimeString();
+        sessionStorage.setItem('adminLoginTime', new Date().toISOString());
+        document.getElementById('loginTime').textContent = `Login: ${now}`;
+    }
+    
+    // Logout button
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        document.getElementById('logoutModal').style.display = 'flex';
+    });
+    
+    // Coba muat script database terlebih dahulu
+    try {
+        await loadDatabaseScript();
+        
+        // Tunggu sebentar untuk inisialisasi
+        setTimeout(async () => {
+            // Load dashboard content
+            await loadDashboardContent();
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Failed to load database script:', error);
+        // Gunakan fallback
+        showFallbackData();
+    }
+});
+
+// Pastikan renderDashboard ada (jika tidak, tambahkan)
+function renderDashboard(stats) {
+    console.log('Rendering dashboard with stats:', stats);
+    
+    // Kode render dashboard Anda yang asli
+    // ... (pastikan fungsi ini ada di kode Anda)
+    
+    // Contoh sederhana jika renderDashboard belum ada:
+    const dashboardContent = document.getElementById('dashboardContent');
+    if (dashboardContent && stats) {
+        dashboardContent.innerHTML = `
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Total Pemilih</h3>
+                    <p class="stat-number">${stats.totalVoters}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Sudah Memilih</h3>
+                    <p class="stat-number">${stats.votesCast}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Persentase</h3>
+                    <p class="stat-number">${stats.votePercentage}%</p>
+                </div>
+            </div>
+            ${stats.isFallback ? '<p style="color: orange;"><i class="fas fa-exclamation-triangle"></i> Data Demo</p>' : ''}
+            <p><small>Terakhir diperbarui: ${stats.lastUpdate}</small></p>
+        `;
+    }
+}
+        
+        // Render dashboard with data
+        function renderDashboard(stats) {
+            console.log('Rendering dashboard with:', stats);
+            
+            const content = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #3949ab, #5c6bc0);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Total Pemilih</h3>
+                            <p class="stat-number">${stats.totalVoters || 0}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #4CAF50, #2E7D32);">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Sudah Memilih</h3>
+                            <p class="stat-number">${stats.votedVoters || 0}</p>
+                            <p class="stat-percentage">${stats.votePercentage || 0}%</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #FF9800, #F57C00);">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Belum Memilih</h3>
+                            <p class="stat-number">${stats.notVotedVoters || 0}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Kandidat</h3>
+                            <p class="stat-number">${stats.totalCandidates || 0}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="candidates-section">
+                    <h2><i class="fas fa-trophy"></i> Hasil Sementara</h2>
+                    <div class="candidates-grid">
+                        ${(stats.candidates || []).map(candidate => `
+                            <div class="candidate-result">
+                                <div class="candidate-number">${candidate.number || '?'}</div>
+                                <div class="candidate-info">
+                                    <h4>${candidate.name || 'Kandidat'}</h4>
+                                    <p class="candidate-votes">
+                                        <i class="fas fa-vote-yea"></i> ${candidate.votes || 0} suara (${candidate.percentage || 0}%)
+                                    </p>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${candidate.percentage || 0}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <h2><i class="fas fa-bolt"></i> Aksi Cepat</h2>
+                    <div class="actions-grid">
+                        <button class="action-btn" onclick="if(confirm('Reset semua voting?')) resetVoting()">
+                            <i class="fas fa-redo"></i>
+                            <span>Reset Voting</span>
+                        </button>
+                        <button class="action-btn" onclick="exportData()">
+                            <i class="fas fa-file-export"></i>
+                            <span>Ekspor Data</span>
+                        </button>
+                        <button class="action-btn" onclick="viewLogs()">
+                            <i class="fas fa-history"></i>
+                            <span>Log Aktivitas</span>
+                        </button>
+                        <button class="action-btn" onclick="refreshDashboard()">
+                            <i class="fas fa-sync"></i>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('dashboardContent').innerHTML = content;
+        }
+        
+        // Action functions
+        async function resetVoting() {
+            if (window.db && window.db.resetAllVotes) {
+                try {
+                    await window.db.resetAllVotes();
+                    alert('✅ Voting berhasil direset!');
+                    loadDashboardContent();
+                } catch (error) {
+                    alert('❌ Gagal reset: ' + error.message);
+                }
+            } else {
+                alert('Fungsi reset tidak tersedia');
+            }
+        }
+        
+        async function exportData() {
+            if (window.db && window.db.exportVotingDataToCSV) {
+                try {
+                    await window.db.exportVotingDataToCSV();
+                } catch (error) {
+                    alert('❌ Gagal ekspor: ' + error.message);
+                }
+            } else {
+                alert('Fungsi ekspor tidak tersedia');
+            }
+        }
+        
+        function viewLogs() {
+            alert('Fitur log aktivitas dalam pengembangan');
+        }
+        
+        function refreshDashboard() {
+            loadDashboardContent();
+        }
+        
+        function showFallbackData() {
+            const fallbackStats = {
+                totalVoters: 107,
+                votedVoters: 0,
+                notVotedVoters: 107,
+                votePercentage: 0,
+                totalCandidates: 3,
+                candidates: [
+                    { number: 1, name: "MUHAMAD FADLAN ARFANI", votes: 0, percentage: 0 },
+                    { number: 2, name: "PRAMUDITA AULADI", votes: 0, percentage: 0 },
+                    { number: 3, name: "DHARMA ALIF SAPUTRA", votes: 0, percentage: 0 }
+                ]
+            };
+            renderDashboard(fallbackStats);
+        }
+        
+        // Initialize dashboard after page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded');
+            document.getElementById('debugInfo').textContent = 'Status: DOM Ready';
+            
+            // Set admin info
+            const adminName = sessionStorage.getItem('adminName') || 'Admin';
+            const adminRole = sessionStorage.getItem('adminRole') || 'Administrator';
+            const adminUsername = sessionStorage.getItem('adminUsername') || 'admin';
+            
+            document.getElementById('adminName').textContent = adminName;
+            document.getElementById('adminRole').textContent = adminRole;
+            document.getElementById('adminUsername').textContent = '@' + adminUsername;
+            
+            // Start loading dashboard
+            setTimeout(() => {
+                console.log('Starting dashboard load...');
+                loadDashboardContent();
+            }, 500);
+        });
+        
+        // Check if database is available
+        function checkDatabaseAvailability() {
+            let attempts = 0;
+            const maxAttempts = 10;
+            
+            const checkInterval = setInterval(() => {
+                attempts++;
+                console.log(`Checking database (attempt ${attempts}/${maxAttempts})...`);
+                
+                if (window.db && window.db.getElectionStats) {
+                    console.log('✅ Database available!');
+                    clearInterval(checkInterval);
+                    document.getElementById('debugInfo').textContent += ' | DB OK';
+                    
+                    // If DOM is already loaded, load dashboard
+                    if (document.readyState === 'complete') {
+                        loadDashboardContent();
+                    }
+                } else if (attempts >= maxAttempts) {
+                    console.error('❌ Database not available after', maxAttempts, 'attempts');
+                    clearInterval(checkInterval);
+                    document.getElementById('debugInfo').textContent += ' | DB Timeout';
+                    
+                    // Show error
+                    document.getElementById('dashboardContent').innerHTML = `
+                        <div class="error-box">
+                            <h3><i class="fas fa-database"></i> Database Error</h3>
+                            <p>Database tidak merespons setelah ${maxAttempts} detik.</p>
+                            <button onclick="location.reload()" class="btn-retry">
+                                <i class="fas fa-sync"></i> Refresh Halaman
+                            </button>
+                        </div>
+                    `;
+                }
+            }, 1000);
+        }
+        
+        // Start checking for database
+        console.log('Starting database check...');
+        checkDatabaseAvailability();
+        
+        console.log('=== MAIN SCRIPT END ===');
+        
+    </script>
+    <!-- Di admin-voters.html, admin-dashboard.html, admin-statistics.html -->
+<script src="sync-helper.js"></script>
+</body>
+</html>

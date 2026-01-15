@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VOTE PAGE</title>
+    <link rel="icon" type="image/png" href="assets/ossip-bg.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Logo Styles */
+        .logo-container {
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e3f2fd;
+        }
+
+        .logo-image {
+            height: 45px;
+            width: auto;
+            max-width: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-image:hover {
+            transform: scale(1.05);
+        }
+
+        /* Header */
+        .vote-header {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .vote-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .vote-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .vote-logo img {
+            height: 50px;
+            filter: brightness(0) invert(1);
+        }
+
+        .vote-logo h1 {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .vote-logo p {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 3px;
+        }
+
+        /* User Info */
+        .vote-user-info {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 12px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-info i {
+            font-size: 28px;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #currentUser {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        #currentUserClass {
+            font-size: 13px;
+            opacity: 0.9;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 500;
+            position: relative;
+            top: 12px;
+            left: 8px;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        .vote-main {
+            padding: 30px 0;
+        }
+
+        /* Instructions */
+        .vote-instructions {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid #3498db;
+        }
+
+        .instruction-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .instruction-header i {
+            color: #3498db;
+            font-size: 24px;
+        }
+
+        .instruction-header h2 {
+            color: #2c3e50;
+            font-size: 22px;
+        }
+
+        .instruction-steps {
+            padding-left: 25px;
+            margin-bottom: 20px;
+        }
+
+        .instruction-steps li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .warning-box {
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .warning-box i {
+            color: #ff9800;
+            font-size: 20px;
+            margin-top: 2px;
+        }
+
+        .warning-box p {
+            color: #5d4037;
+            font-size: 15px;
+        }
+
+        /* Candidates Section */
+        .vote-candidates {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .vote-title {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .vote-subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .vote-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        /* Vote Card */
+        .vote-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vote-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            border-color: #3498db;
+        }
+
+        .card-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .card-avatar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .card-avatar img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #f1f8ff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .avatar-label {
+            display: block;
+            margin-top: 8px;
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .candidate-name {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-icon {
+            color: #3498db;
+            width: 20px;
+        }
+
+        .info-text {
+            color: #555;
+            font-size: 15px;
+        }
+
+        .kelas-teks {
+            position: relative;
+            top: 0,1px;
+            left: 4px;
+            color: #555;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: medium;
+            font-style :normal
+        }
+
+        .tag-kandidat {
+            position:relative;
+            top: 1px;
+            left: 4px;
+            color:  #555;
+            font-family: 'inter', sans-serif;
+            font-size: 95%;
+            font-style: normal
+        }
+
+        .vision-box {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 4px solid #3498db;
+        }
+
+        .vision-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .vision-title i {
+            color: #3498db;
+        }
+
+        .vision-text {
+            color: #555;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        /* Vote Button */
+        .vote-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .vote-btn:hover {
+            background: linear-gradient(135deg, #219653 0%, #1e8449 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3em;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        /* Confirmation Details */
+        .voter-details-confirm {
+            background: #f8f9fa;
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 4px solid #3498db;
+        }
+
+        .voter-details-confirm h4 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+        }
+
+        .voter-details-confirm p {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #555;
+        }
+
+        .voter-details-confirm i {
+            color: #3498db;
+            width: 20px;
+            text-align: center;
+        }
+
+        .confirmation-warning {
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .confirmation-warning i {
+            color: #ff9800;
+            font-size: 20px;
+            margin-top: 2px;
+        }
+
+        .confirmation-warning p {
+            color: #5d4037;
+            line-height: 1.6;
+        }
+
+        /* Selected Candidate Info */
+        .selected-candidate {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #bbdefb;
+            margin: 20px 0;
+        }
+
+        .selected-candidate h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .selected-candidate p {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #555;
+        }
+
+        .selected-candidate i {
+            color: #3498db;
+            width: 20px;
+        }
+
+        /* Success Modal */
+        .success-modal {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .modal-icon {
+            font-size: 70px;
+            color: #27ae60;
+            margin-bottom: 25px;
+            animation: scaleIn 0.5s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .success-modal h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .success-modal > p {
+            color: #7f8c8d;
+            line-height: 1.7;
+            margin-bottom: 25px;
+        }
+
+        .success-details {
+            text-align: left;
+            margin: 25px 0;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .success-details p {
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .success-details i {
+            color: #27ae60;
+            width: 20px;
+        }
+
+        /* Buttons */
+        .btn-cancel, .btn-confirm, .btn-finish {
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-width: 140px;
+            font-size: 15px;
+        }
+
+        .btn-cancel {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #1f639c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-finish {
+            background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+            color: white;
+            min-width: 200px;
+            margin: 20px auto 0;
+        }
+
+        .btn-finish:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        /* Footer */
+        .vote-footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 40px;
+        }
+
+        .vote-footer p {
+            margin: 8px 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .vote-footer i {
+            color: #3498db;
+            margin-right: 8px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .vote-header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .vote-user-info {
+                flex-direction: column;
+                gap: 15px;
+                min-width: auto;
+                width: 100%;
+            }
+            
+            .vote-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-footer {
+                flex-direction: column;
+            }
+            
+            .btn-cancel, .btn-confirm {
+                width: 100%;
+            }
+            
+            .vote-title {
+                font-size: 24px;
+            }
+            
+            .vote-card {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .vote-instructions, .vote-candidates {
+                padding: 20px;
+            }
+            
+            .modal-content {
+                margin: 10px;
+            }
+            
+            .modal-body {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="vote-page">
+    <header class="vote-header">
+        <div class="container">
+            <div class="vote-header-content">
+                <div class="vote-logo">
+                    <div class="logo-container">
+                        <img src="assets/logo-ossip.png" alt="Logo OSSIP" class="logo-image" 
+                            onerror="this.classList.add('error');">
+                    </div>
+                    <div>
+                        <h1>PEMILIHAN OSSIP</h1>
+                        <p>2026-2027 | INSAN PRATAMA</p>
+                    </div>
+                </div>
+                <div class="vote-user-info">
+                    <div class="user-info">
+                        <i class="fas fa-user-circle"></i>
+                        <div class="user-details">
+                            <span id="currentUser">Memuat data...</span>
+                            <span id="currentUserClass" class="user-class"></span>
+                        </div>
+                    </div>
+                    <button class="btn-logout" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <main class="vote-main">
+        <div class="container">
+            <div class="vote-instructions">
+                <div class="instruction-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h2>Panduan Pemilihan</h2>
+                </div>
+                <ol class="instruction-steps">
+                    <li>Pilih <strong>satu pasangan</strong> calon ketua OSSIP.</li>
+                    <li>Klik tombol "PILIH" pada kandidat yang Anda pilih.</li>
+                    <li>Konfirmasi pilihan Anda sebelum mengirimkan.</li>
+                    <li>Setelah memilih, Anda <strong>tidak dapat mengganti</strong> pilihan.</li>
+                    <li>Hasil pemilihan akan dimulai pada 24 Januari 2026.</li>
+                </ol>
+                <div class="warning-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Anda hanya dapat memilih <strong>satu kali</strong>. Pastikan pilihan Anda sudah tepat sebelum mengkonfirmasi.</p>
+                </div>
+            </div>
+            
+            <div class="vote-candidates">
+                <h2 class="vote-title">PILIH CALON KETUA OSSIP</h2>
+                <p class="vote-subtitle">Klik pada kartu kandidat untuk melihat detail visi dan misi</p>
+                
+                <div class="vote-grid" id="candidatesGrid">
+                    <!-- Kandidat akan di-load oleh JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Konfirmasi Modal -->
+            <div class="modal-overlay" id="confirmModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2><i class="fas fa-exclamation-circle"></i> Konfirmasi Pilihan Anda</h2>
+                        <button class="modal-close" id="closeModal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Informasi Pemilih -->
+                        <div class="voter-details-confirm">
+                            <h4><i class="fas fa-user-check"></i> Data Pemilih</h4>
+                            <p><i class="fas fa-user"></i> <strong>Nama:</strong> <span id="voterNameConfirm">-</span></p>
+                            <p><i class="fas fa-id-card"></i> <strong>Username:</strong> <span id="voterUsernameConfirm">-</span></p>
+                            <p><i class="fas fa-graduation-cap"></i> <strong>Kelas:</strong> <span id="voterClassConfirm">-</span></p>
+                        </div>
+                        
+                        <div class="confirmation-details">
+                            <div class="selected-candidate" id="selectedCandidateInfo">
+                                <!-- Informasi kandidat akan diisi oleh JavaScript -->
+                            </div>
+                            <div class="confirmation-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Anda akan memilih <strong id="selectedCandidateName">-</strong>. Setelah dikonfirmasi, pilihan <strong>tidak dapat diubah</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-cancel" id="cancelVote">
+                            <i class="fas fa-times"></i> Batal
+                        </button>
+                        <button class="btn-confirm" id="confirmVote">
+                            <i class="fas fa-check"></i> YA, KONFIRMASI PILIHAN
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Success Modal -->
+            <div class="modal-overlay" id="successModal">
+                <div class="modal-content success-modal">
+                    <div class="modal-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2>SUARA ANDA TELAH TERKIRIM!</h2>
+                    <p>Terima kasih telah berpartisipasi dalam Pemilu OSSIP 2026-2027. Suara Anda sangat berharga untuk menentukan masa depan organisasi siswa di sekolah kita.</p>
+                    
+                    <div class="success-details">
+                        <p><i class="fas fa-user"></i> <strong>Nama Pemilih:</strong> <span id="voterNameSuccess">-</span></p>
+                        <p><i class="fas fa-id-card"></i> <strong>Username:</strong> <span id="voterUsernameSuccess">-</span></p>
+                        <p><i class="fas fa-clock"></i> <strong>Waktu:</strong> <span id="voteTimeSuccess">-</span></p>
+                        <p><i class="fas fa-vote-yea"></i> <strong>Pilihan:</strong> <span id="voteChoiceSuccess">-</span></p>
+                    </div>
+                    
+                    <button class="btn-finish" id="finishBtn">
+                        <i class="fas fa-home"></i> KEMBALI KE BERANDA
+                    </button>
+                </div>
+            </div>
+
+            <!-- Already Voted Modal -->
+            <div class="modal-overlay" id="alreadyVotedModal">
+                <div class="modal-content success-modal">
+                    <div class="modal-icon" style="color: #e74c3c;">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h2 style="color: #e74c3c;">ANDA SUDAH MEMILIH!</h2>
+                    <p>Anda sudah melakukan voting sebelumnya. Setiap siswa hanya dapat memilih satu kali.</p>
+                    
+                    <div class="success-details">
+                        <p><i class="fas fa-user"></i> <strong>Nama Pemilih:</strong> <span id="voterNameAlready">-</span></p>
+                        <p><i class="fas fa-id-card"></i> <strong>Username:</strong> <span id="voterUsernameAlready">-</span></p>
+                        <p><i class="fas fa-graduation-cap"></i> <strong>Kelas:</strong> <span id="voterClassAlready">-</span></p>
+                        <p><i class="fas fa-info-circle"></i> <strong>Status:</strong> Sudah melakukan voting</p>
+                    </div>
+                    
+                    <button class="btn-finish" id="backToHomeBtn" style="background: #e74c3c;">
+                        <i class="fas fa-home"></i> KEMBALI KE BERANDA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="vote-footer">
+        <div class="container">
+            <p><i class="fas fa-lock"></i> Sistem ini aman dan terenkripsi. Pilihan Anda bersifat rahasia.</p>
+            <p>Pemilu OSSIP 2026-2027 | INSAN PRATAMA</p>
+        </div>
+    </footer>
+
+    <script>
+    // ============================================
+    // VOTING PAGE SCRIPT - SIMPLE VERSION
+    // ============================================
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log("🗳️ Voting page initialized");
+        
+        let currentVoter = null;
+        let candidates = [];
+        let selectedCandidate = null;
+        
+        // ============================================
+        // 1. CHECK USER SESSION
+        // ============================================
+        
+        function checkUserSession() {
+            console.log("🔍 Checking user session...");
+            
+            const voterData = sessionStorage.getItem('currentVoter');
+            
+            if (!voterData) {
+                console.log("❌ No session found, redirecting to login");
+                alert('Anda belum login. Silakan login terlebih dahulu.');
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            try {
+                currentVoter = JSON.parse(voterData);
+                console.log("✅ Session found:", currentVoter.name);
+                
+                // Cek apakah sudah memilih
+                if (currentVoter.has_voted) {
+                    console.log("⚠️ User has already voted");
+                    showAlreadyVotedModal(currentVoter);
+                    disableVoteButtons();
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error("❌ Error parsing session:", error);
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+        
+        // ============================================
+        // 2. UPDATE USER HEADER
+        // ============================================
+        
+        function updateUserHeader() {
+            console.log("🔄 Updating header...");
+            
+            const userNameElement = document.getElementById('currentUser');
+            const userClassElement = document.getElementById('currentUserClass');
+            
+            if (userNameElement && currentVoter) {
+                userNameElement.textContent = currentVoter.name;
+                console.log("✅ Set user name to:", currentVoter.name);
+            }
+            
+            if (userClassElement && currentVoter) {
+                userClassElement.textContent = currentVoter.class;
+                console.log("✅ Set user class to:", currentVoter.class);
+            }
+            
+            console.log("✅ Header updated successfully");
+        }
+        
+        // ============================================
+        // 3. LOAD CANDIDATES FROM DATABASE
+        // ============================================
+        
+        async function loadCandidates() {
+            console.log("🔄 Loading candidates...");
+            
+            try {
+                candidates = await window.db.getAllCandidates();
+                
+                if (!candidates || candidates.length === 0) {
+                    console.error("❌ No candidates found");
+                    renderDefaultCandidates();
+                    return;
+                }
+                
+                console.log("✅ Candidates loaded:", candidates.length);
+                renderCandidates(candidates);
+                
+            } catch (error) {
+                console.error("❌ Error loading candidates:", error);
+                renderDefaultCandidates();
+            }
+        }
+
+        
+        
+        function renderDefaultCandidates() {
+            const defaultCandidates = [
+                {
+                    id: 1,
+                    number: 1,
+                    chairman_name: "MUHAMAD FADLAN ARFANI",
+                    chairman_class: "XI D",
+                    motto: "Kandidat 1 Komitmen yang kuat, tindakan nyata",
+                    tags: ["#Ganteng", " #Prestasi", " #Loyalitas"],
+                    vision: "Mewujudkan <b>OSSIP</b> yang aktif, berakhlak, disiplin, dan progresif, sebagai wadah santri untuk berkembang, berprestasi, dan memberi dampak positif bagi pesantren",
+                    image_chairman: "assets/kandidat1.jpg",
+                    votes: 0
+                },
+                {
+                    id: 2,
+                    number: 2,
+                    chairman_name: "PRAMUDITA AULADI",
+                    chairman_class: "XI D", 
+                    motto: "Gaul dan humoris tapi taat agama pastinya di No 2",
+                    tags: ["#Kreatif", " #Kolaborasi", " #Aspiratif"],
+                    vision: "Menjadikan OSSIP sebagai organisasi santri yang berakhlak Qur’ani, disiplin, mandiri, beriman dan berjiwa kepemimpinan",
+                    image_chairman: "assets/kandidat2.jpg",
+                    votes: 0
+                },
+                {
+                    id: 3,
+                    number: 3,
+                    chairman_name: "DHARMA ALIF SAPUTRA",
+                    chairman_class: "XI D",
+                    motto: "Mau ketos yang disiplin dan berakhlak mulia pilihlah DHARMA",
+                    tags: ["#Solidaritas", " #Transparan", " #Fleksibel"],
+                    vision: "mewujudkan ossip insan pratama sebagai organisasi siswa yang aktif, berakhlak mulia, berprestasi, serta mampu menumbuhkan kretivitas dan kepemimpinan siswa dalam lingkungan sekolah yang harmonis dan berkarakter",
+                    image_chairman: "assets/kandidat3.png",
+                    votes: 0
+                }
+            ];
+            
+            candidates = defaultCandidates;
+            renderCandidates(defaultCandidates);
+        }
+        
+        function renderCandidates(candidatesList) {
+            const grid = document.getElementById('candidatesGrid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            candidatesList.forEach(candidate => {
+                const card = document.createElement('div');
+                card.className = 'vote-card';
+                
+                card.innerHTML = `
+                    <div class="card-badge">KANDIDAT ${candidate.number}</div>
+                    
+                    <div class="card-avatar">
+                        <img src="${candidate.image_chairman}" alt="${candidate.chairman_name}">
+                        <span class="avatar-label">Ketua</span>
+                    </div>
+                    
+                    <h4 class="candidate-name">${candidate.chairman_name}</h4>
+                    
+                    <div class="tags-container">
+                        ${candidate.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                    
+                    <div class="info-box">
+                        <div class="info-row">
+                            <i class="fas fa-graduation-cap info-icon"></i>
+                            <span class="kelas-teks">${candidate.chairman_class}</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-quote-left info-icon"></i>
+                            <span class="info-text">"${candidate.motto}"</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-user-tag info-icon"></i>
+                            <span class="tag-kandidat">${candidate.tags}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="vision-box">
+                        <h4 class="vision-title">
+                            <i class="fas fa-bullseye"></i>
+                            Visi Utama
+                        </h4>
+                        <p class="vision-text">${candidate.vision}</p>
+                    </div>
+                    
+                    <button class="vote-btn" data-candidate-id="${candidate.id}">
+                        <i class="fas fa-check-circle"></i>
+                        PILIH KANDIDAT INI
+                    </button>
+                `;
+                
+                grid.appendChild(card);
+            });
+            
+            setupVoteButtons();
+        }
+        
+        // ============================================
+        // 4. VOTE FUNCTIONALITY
+        // ============================================
+        
+        function setupVoteButtons() {
+            const voteButtons = document.querySelectorAll('.vote-btn');
+            
+            voteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (!currentVoter) {
+                        alert('Silakan login terlebih dahulu.');
+                        return;
+                    }
+                    
+                    if (currentVoter.has_voted) {
+                        alert('Anda sudah melakukan voting.');
+                        return;
+                    }
+                    
+                    const candidateId = parseInt(this.getAttribute('data-candidate-id'));
+                    selectedCandidate = candidateId;
+                    
+                    console.log("🎯 Selected candidate:", candidateId);
+                    
+                    const candidate = candidates.find(c => c.id === candidateId);
+                    
+                    if (!candidate) {
+                        alert('Kandidat tidak ditemukan!');
+                        return;
+                    }
+                    
+                    updateConfirmationModal(currentVoter, candidate);
+                    
+                    const confirmModal = document.getElementById('confirmModal');
+                    if (confirmModal) {
+                        confirmModal.style.display = 'flex';
+                    }
+                });
+            });
+        }
+        
+        function updateConfirmationModal(voter, candidate) {
+            document.getElementById('voterNameConfirm').textContent = voter.name;
+            document.getElementById('voterUsernameConfirm').textContent = voter.username;
+            document.getElementById('voterClassConfirm').textContent = voter.class;
+            
+            document.getElementById('selectedCandidateName').textContent = 
+                `Kandidat ${candidate.number}: ${candidate.chairman_name}`;
+            
+            document.getElementById('selectedCandidateInfo').innerHTML = `
+                <h4><i class="fas fa-user-tie"></i> Kandidat ${candidate.number}: ${candidate.chairman_name}</h4>
+                <p><i class="fas fa-graduation-cap"></i> <strong>Kelas Ketua:</strong> ${candidate.chairman_class}</p>
+                <p><i class="fas fa-quote-left"></i> <strong>Motto:</strong> "${candidate.motto}"</p>
+                <p><i class="fas fa-tags"></i> <strong>Tagline:</strong> ${candidate.tags.join(', ')}</p>
+                <p><i class="fas fa-eye"></i> <strong>Visi:</strong> ${candidate.vision}</p>
+            `;
+        }
+        
+        // ============================================
+        // 5. MODAL CONTROLS
+        // ============================================
+        
+        document.getElementById('closeModal')?.addEventListener('click', function() {
+            document.getElementById('confirmModal').style.display = 'none';
+            selectedCandidate = null;
+        });
+        
+        document.getElementById('cancelVote')?.addEventListener('click', function() {
+            document.getElementById('confirmModal').style.display = 'none';
+            selectedCandidate = null;
+        });
+        
+        window.addEventListener('click', function(event) {
+            const confirmModal = document.getElementById('confirmModal');
+            const successModal = document.getElementById('successModal');
+            const alreadyVotedModal = document.getElementById('alreadyVotedModal');
+            
+            if (confirmModal && event.target === confirmModal) {
+                confirmModal.style.display = 'none';
+                selectedCandidate = null;
+            }
+            if (successModal && event.target === successModal) {
+                successModal.style.display = 'none';
+            }
+            if (alreadyVotedModal && event.target === alreadyVotedModal) {
+                alreadyVotedModal.style.display = 'none';
+            }
+        });
+        
+        // ============================================
+        // 6. CONFIRM VOTE
+        // ============================================
+        
+        document.getElementById('confirmVote').addEventListener('click', async function() {
+            if (!selectedCandidate || !currentVoter) {
+                alert('Silakan pilih kandidat terlebih dahulu!');
+                return;
+            }
+            
+            console.log("🗳️ Confirming vote...");
+            
+            const confirmBtn = document.getElementById('confirmVote');
+            const cancelBtn = document.getElementById('cancelVote');
+            const originalText = confirmBtn.innerHTML;
+            const cancelOriginalText = cancelBtn.innerHTML;
+            
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
+            confirmBtn.disabled = true;
+            cancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENUNGGU...';
+            cancelBtn.disabled = true;
+            
+            document.getElementById('confirmModal').style.display = 'none';
+            
+            try {
+                const result = await window.db.castVote(currentVoter.id, selectedCandidate);
+                
+                if (result.success) {
+                    console.log("✅ Vote successful!");
+                    
+                    currentVoter.has_voted = true;
+                    currentVoter.vote_candidate_id = selectedCandidate;
+                    currentVoter.vote_time = result.timestamp;
+                    
+                    sessionStorage.setItem('currentVoter', JSON.stringify(currentVoter));
+                    
+                    updateUserHeader();
+                    showSuccessModal(currentVoter, selectedCandidate);
+                    disableVoteButtons();
+                    
+                } else {
+                    if (result.already_voted) {
+                        currentVoter.has_voted = true;
+                        sessionStorage.setItem('currentVoter', JSON.stringify(currentVoter));
+                        showAlreadyVotedModal(currentVoter);
+                        disableVoteButtons();
+                    } else {
+                        alert(result.message || 'Gagal melakukan voting.');
+                        document.getElementById('confirmModal').style.display = 'flex';
+                    }
+                }
+                
+            } catch (error) {
+                console.error("❌ Error during vote:", error);
+                alert('Terjadi kesalahan saat memproses vote. Silakan coba lagi.');
+                document.getElementById('confirmModal').style.display = 'flex';
+                
+            } finally {
+                confirmBtn.innerHTML = originalText;
+                confirmBtn.disabled = false;
+                cancelBtn.innerHTML = cancelOriginalText;
+                cancelBtn.disabled = false;
+            }
+        });
+        
+        // ============================================
+        // 7. SUCCESS MODAL
+        // ============================================
+        
+        function showSuccessModal(voter, candidateId) {
+            const candidate = candidates.find(c => c.id === candidateId);
+            if (!candidate) return;
+            
+            document.getElementById('voterNameSuccess').textContent = voter.name;
+            document.getElementById('voterUsernameSuccess').textContent = voter.username;
+            
+            const voteTime = new Date(voter.vote_time || new Date());
+            document.getElementById('voteTimeSuccess').textContent = voteTime.toLocaleString('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            document.getElementById('voteChoiceSuccess').textContent = 
+                `Kandidat ${candidate.number}: ${candidate.chairman_name}`;
+            
+            document.getElementById('successModal').style.display = 'flex';
+        }
+        
+        // ============================================
+        // 8. ALREADY VOTED MODAL
+        // ============================================
+        
+        function showAlreadyVotedModal(voter) {
+            document.getElementById('voterNameAlready').textContent = voter.name;
+            document.getElementById('voterUsernameAlready').textContent = voter.username;
+            document.getElementById('voterClassAlready').textContent = voter.class;
+            
+            document.getElementById('alreadyVotedModal').style.display = 'flex';
+        }
+        
+        document.getElementById('backToHomeBtn')?.addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+        
+        // ============================================
+        // 9. UTILITY FUNCTIONS
+        // ============================================
+        
+        function disableVoteButtons() {
+            document.querySelectorAll('.vote-btn').forEach(button => {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-check-circle"></i> SUDAH MEMILIH';
+                button.style.background = '#95a5a6';
+                button.style.cursor = 'not-allowed';
+                button.style.opacity = '0.7';
+            });
+        }
+        
+        // ============================================
+        // 10. LOGOUT FUNCTION
+        // ============================================
+        
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            if (confirm('Apakah Anda yakin ingin keluar dari sistem voting?')) {
+                console.log("👋 Logging out...");
+                sessionStorage.removeItem('currentVoter');
+                window.location.href = 'login.html';
+            }
+        });
+        
+        // ============================================
+        // 11. FINISH BUTTON
+        // ============================================
+        
+        document.getElementById('finishBtn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+        
+        // ============================================
+        // 12. KEYBOARD SHORTCUTS
+        // ============================================
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const confirmModal = document.getElementById('confirmModal');
+                const successModal = document.getElementById('successModal');
+                const alreadyVotedModal = document.getElementById('alreadyVotedModal');
+                
+                if (confirmModal.style.display === 'flex') {
+                    confirmModal.style.display = 'none';
+                    selectedCandidate = null;
+                }
+                if (successModal.style.display === 'flex') {
+                    successModal.style.display = 'none';
+                }
+                if (alreadyVotedModal.style.display === 'flex') {
+                    alreadyVotedModal.style.display = 'none';
+                }
+            }
+            
+            if (e.key === '1' || e.key === '2' || e.key === '3') {
+                const candidateNumber = parseInt(e.key);
+                const candidate = candidates.find(c => c.number === candidateNumber);
+                if (candidate && !currentVoter?.has_voted) {
+                    const button = document.querySelector(`.vote-btn[data-candidate-id="${candidate.id}"]`);
+                    if (button) button.click();
+                }
+            }
+        });
+        
+        // ============================================
+        // 13. INITIALIZE APP
+        // ============================================
+        
+        async function initializeApp() {
+            console.log("🚀 Initializing voting app...");
+            
+            // Check user session
+            if (!checkUserSession()) {
+                return;
+            }
+            
+            // Update user header
+            updateUserHeader();
+            
+            // Load candidates
+            await loadCandidates();
+            
+            console.log("✅ Voting app initialized successfully");
+        }
+        
+        // Start the app
+        await initializeApp();
+    });
+    </script>
+    <script src="database.js"></script>
+</body>
+</html>
